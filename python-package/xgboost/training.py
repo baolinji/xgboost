@@ -6,6 +6,7 @@ from __future__ import absolute_import
 
 import warnings
 import numpy as np
+import re
 from .core import Booster, STRING_TYPES, XGBoostError, CallbackEnv, EarlyStopException
 from .compat import (SKLEARN_INSTALLED, XGBStratifiedKFold)
 from . import rabit
@@ -72,6 +73,19 @@ def _train_internal(params, dtrain,
         # Skip the first update if it is a recovery step.
         if version % 2 == 0:
             bst.update(dtrain, i, obj)
+            #tree and node info
+            name = re.findall('\[\(*.?\)\]',bst.get_dump()[i])
+            f_stats = {}
+            for n in name:
+                if n.split('<')[0] in f_stats:
+                    f_stats[n.split('<')[0]] += 1
+                else:
+                    f_stats[n.split('<')[0]] = 1
+            f_re = sorted(f_stats.items(),key=lambda d:d[1],reverse=True)
+            print "_-_-_-_-_-_-_-_-_-_-_Boosting Info_-_-_-_-_-_-_-_-_-_-_-_-"
+            print 'node numbers is ',len(name)
+            print 'Boosting is ',i, ' num_boosting,and node is:'
+            print f_re
             bst.save_rabit_checkpoint()
             version += 1
 
